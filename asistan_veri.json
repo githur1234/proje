@@ -1,16 +1,16 @@
 {
-     "first": "y",
-     "name": "furkan",
+     "first": "n",
+     "name": "",
      "question": {
-          "what is your phone number": "+905539353324",
-          "please make password": "ff000000"
+          "what is your phone number": "",
+          "please make password": ""
      },
      "people": {
-          "furkan": "+905539353324"
+          "furkan": ""
      },
      "sleep": [
           "n",
           "n"
      ],
-     "dizi": "C:/Users/DELL/Desktop/asistan/"
+     "dizi": ""
 }
